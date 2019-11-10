@@ -1,0 +1,56 @@
+# Circuitplayground Balloon RC
+
+import array
+import digitalio
+import pulseio
+import board
+import adafruit_irremote
+import time
+import neopixel
+
+## Hardware Configuration
+# Define IR Remote
+remote = adafruit_irremote.GenericTransmit((3350, 1675), (460, 1300), (460, 400), 465)
+
+# Define Buttons for test
+button_left = digitalio.DigitalInOut(board.D4)
+button_right = digitalio.DigitalInOut(board.D5)
+button_left.switch_to_input(pull=digitalio.Pull.DOWN)
+button_right.switch_to_input(pull=digitalio.Pull.DOWN)
+
+# Remote IR Out
+pwm = pulseio.PWMOut(board.A3, frequency = 38000, duty_cycle = 2 ** 15)
+pulseout = pulseio.PulseOut(pwm)
+
+# Define Encoder
+encoder = adafruit_irremote.GenericTransmit(header=[9500, 4500], one=[550, 550],
+                                            zero=[550, 1700], trail=0)
+
+# Built in red LED
+#led = DigitalInOut(board.D13)
+#led.direction = Direction.OUTPUT
+
+# NeoPixel strip (of 16 LEDs) connected on D
+#NUMPIXELS = 16
+#neopixels=neopixel.NeoPixel(board.D4,NUMPIXELS,brightness=0.2,auto_write=False)
+
+## Software Configuration
+# Global Variables
+
+VOLUMEUP = bytearray(b'*L\x02\x80\xe8j')
+VOLUMEDOWN = bytearray(b'*L\x02\x88\xe8b')
+
+#left = digitalio.DigitalInOut(board.LEFT_BUTTON)
+#right = digitalio.DigitalInOut(board.RIGHT_BUTTON)
+#left.switch_to_input(pull=digitalio.DigitalInOut.Pull.DOWN)
+#right.switch_to_input(pull=digitalio.DigitalInOut.Pull.DOWN)
+
+while True:
+    if button_left.value:
+        print("Left Button Pressed")
+        #remote.transmit(pulse, VOLUMEUP)
+        encoder.transmit(pulseout, [255, 2, 255, 0]
+    if button_right.value:
+        print("Right Button Pressed")
+       # remote.transmit(pulse, VOLUMEDOWN)
+        encoder.transmit(pulseout, [100, 100, 0, 0]
