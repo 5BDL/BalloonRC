@@ -19,7 +19,7 @@ button_left.switch_to_input(pull=digitalio.Pull.DOWN)
 button_right.switch_to_input(pull=digitalio.Pull.DOWN)
 
 # Remote IR Out
-pwm = pulseio.PWMOut(board.A3, frequency = 38000, duty_cycle = 2 ** 15)
+pwm = pulseio.PWMOut(board.D10, frequency = 38000, duty_cycle = 2 ** 15)
 pulseout = pulseio.PulseOut(pwm)
 
 # Define Encoder
@@ -49,8 +49,8 @@ while True:
     if button_left.value:
         print("Left Button Pressed")
         #remote.transmit(pulse, VOLUMEUP)
-        encoder.transmit(pulseout, [255, 2, 255, 0]
+        encoder.transmit(pulseout, [255, 2, 255, 0])
     if button_right.value:
         print("Right Button Pressed")
        # remote.transmit(pulse, VOLUMEDOWN)
-        encoder.transmit(pulseout, [100, 100, 0, 0]
+        encoder.transmit(pulseout, [100, 100, 0, 0])
