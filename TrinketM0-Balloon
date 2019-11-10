@@ -1,0 +1,109 @@
+# Trinket M0 Balloon RC
+
+import board
+from digitalio import DigitalInOut, Direction, Pull
+from analogio import AnalogOut, AnalogIn
+import neopixel
+import pulseio
+import adafruit_irremote
+from adafruit_motor import servo
+
+## Hardware Configuration
+# Define Servo Motor
+pwm = pulseio.PWMOut(board.D2, duty_cycle=2 ** 15, frequency=50)
+my_servo = servo.Servo(pwm)
+
+# Define IR Receiver
+IR = pulseio.PulseIn(board.D3, maxlen = 200, idle_state = True)
+
+# Define IR Decoder
+decoder = adafruit_irremote.GenericDecode()
+
+# Built in red LED
+led = DigitalInOut(board.D13)
+led.direction = Direction.OUTPUT
+
+# NeoPixel strip (of 16 LEDs) connected on D4
+NUMPIXELS = 16
+neopixels=neopixel.NeoPixel(board.D4,NUMPIXELS,brightness=0.2,auto_write=False)
+
+
+## Software Configuration
+# Global Variables
+
+start_angle = 35
+angle_stop = 60
+angle_left = 70
+angle_right = 0
+forward_sleep = 0.2
+forward_start_sleep = 0.05
+turn_sleep = 0.1
+turn_step = 5
+angle_step_a = 6
+angle_step_b = -6
+forward_button = '5'
+left_button = '7'
+right_button = '8'
+
+
+# Function Definitions
+def forward_start():
+    for angle in range(0, angle_stop, angle_step_a):
+        my_servo.angle = angle
+        time.sleep(forward_start_sleep)
+        print("Angle = %0.2f" % angle)
+    for angle in range(angle_stop, 0, angle_step_b):
+        my_servo.angle = angle
+        time.sleep(forward_start_sleep)
+        print("Angle = %0.2f" % angle)
+        
+def forward():
+    my_servo.angle = angle_left
+    time.sleep(forward_sleep)
+    my_servo.angle = angle_right
+    time.sleep(forward_sleep)
+        
+def left():
+    my_servo.angle = angle_left
+    time.sleep(turn_sleep)
+        # print("Left Button Pressed, Angle = %0.2f" % angle)
+
+def right():
+    my_servo.angle = angle_right
+    time.sleep(turn_sleep)
+
+
+
+######################### HELPERS ##############################
+
+# Helper to convert analog input to voltage
+def getVoltage(pin):
+    return (pin.value * 3.3) / 65536
+
+# Helper to give us a nice color swirl
+def wheel(pos):
+    # Input a value 0 to 255 to get a color value.
+    # The colours are a transition r - g - b - back to r.
+    if (pos < 0):
+        return [0, 0, 0]
+    if (pos > 255):
+        return [0, 0, 0]
+    if (pos < 85):
+        return [int(pos * 3), int(255 - (pos*3)), 0]
+    elif (pos < 170):
+        pos -= 85
+        return [int(255 - pos*3), 0, int(pos*3)]
+    else:
+        pos -= 170
+        return [0, int(pos*3), int(255 - pos*3)]
+
+######################### MAIN LOOP ##############################
+
+i = 0
+while True:
+    # forward_start()
+    pulse = decoder.read_pulses(IR)
+    print(pulse)
+
+# Read analog voltage on D0
+#    print("D0: %0.2f" % getVoltage(analog1in))
