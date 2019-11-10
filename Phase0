@@ -1,0 +1,96 @@
+import board
+import time
+import pulseio
+import digitalio
+import touchio
+import neopixel
+from adafruit_motor import servo
+from adafruit_debouncer import Debouncer
+from adafruit_ble.uart_server import UARTServer
+from adafruit_bluefruit_connect.packet import Packet
+from adafruit_bluefruit_connect.button_packet import ButtonPacket
+
+
+## Hardware Configuration
+# Initiate Servo (PWM)
+pwm = pulseio.PWMOut(board.A2, duty_cycle=2 ** 15, frequency=80)
+my_servo = servo.Servo(pwm)
+# Define Buttons for test
+button_left = digitalio.DigitalInOut(board.D4)
+button_right = digitalio.DigitalInOut(board.D5)
+button_left.switch_to_input(pull=digitalio.Pull.DOWN)
+button_right.switch_to_input(pull=digitalio.Pull.DOWN)
+switch = Debouncer(button_left, interval=0.05)
+# Initiate BLE Server
+uart_server = UARTServer()
+
+
+## Software Configuration
+# Global Variables
+# Testing BLE Buttons 5 = Forward, 7 = Left, 8 = Right, 6 = down
+start_angle = 35
+angle_stop = 60
+angle_left = 70
+angle_right = 0
+forward_sleep = 0.2
+forward_start_sleep = 0.05
+turn_sleep = 0.1
+turn_step = 5
+angle_step_a = 6
+angle_step_b = -6
+forward_button = '5'
+left_button = '7'
+right_button = '8'
+
+
+# Function Definitions
+def forward_start():
+    for angle in range(0, angle_stop, angle_step_a):
+        my_servo.angle = angle
+        time.sleep(forward_sleep_start)
+        print("Angle = %0.2f" % angle)
+    for angle in range(angle_stop, 0, angle_step_b):
+        my_servo.angle = angle
+        time.sleep(forward_sleep_start)
+        print("Angle = %0.2f" % angle)
+        
+def forward():
+    my_servo.angle = angle_left
+    time.sleep(forward_sleep)
+    my_servo.angle = angle_right
+    time.sleep(forward_sleep)
+        
+def left():
+    my_servo.angle = angle_left
+    time.sleep(turn_sleep)
+        # print("Left Button Pressed, Angle = %0.2f" % angle)
+
+def right():
+    my_servo.angle = angle_right
+    time.sleep(turn_sleep)
+        
+while True:
+    my_servo.angle = start_angle
+    uart_server.start_advertising()
+    while not uart_server.connected:
+        forward_start()
+        pass
+    
+    while uart_server.connected:
+        my_servo.angle = start_angle
+        packet = Packet.from_stream(uart_server)
+        if isinstance(packet, ButtonPacket):
+            print(packet.button)
+            direction = packet.button
+            if direction == forward_button:
+                forward()
+            elif direction == left_button:
+                left()
+            elif direction == right_button:
+                right()
+        
+    
+
+#    for angle in range(60, 0, -5):
+#        my_servo.angle = angle
+#        time.sleep(0.05)
