@@ -45,7 +45,10 @@ angle_step_b = -6
 forward_button = '5'
 left_button = '7'
 right_button = '8'
-
+balloon_code = 0
+forward_code = [0, 0, 255, balloon_code]
+right_code = [0, 255, 0, balloon_code]
+left_code = [255, 0, 0, balloon_code]
 
 # Function Definitions
 def forward_start():
@@ -105,7 +108,7 @@ while True:
     # forward_start()
     my_servo.angle = start_angle
     pulses = decoder.read_pulses(IR)
-    try: 
+    try:
         # Attempt to convert received pulses into numbers
         received_code = decoder.decode_bits(pulses)
     except adafruit_irremote.IRNECRepeatException:
@@ -114,14 +117,18 @@ while True:
     except adafruit_irremote.IRDecodeException as e:
         # Something went wrong or maybe just not an NEC type
         continue
-    
+
     print("NEC Infrared Code Received: ", received_code)
-    if received_code == [255, 2, 255, 0]:
-        print("Left Button Received")
-        left()
-    if received_code == [100, 100, 0, 0]:
+
+    if received_code == forward_code:
+        print("Forward Button Received")
+        forward()
+    elif received_code == right_code:
         print("Right Button Received")
         right()
+    elif received_code == left_code:
+        print("Left Button Received")
+        left()
 
 # Read analog voltage on D0
 #    print("D0: %0.2f" % getVoltage(analog1in))
