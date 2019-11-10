@@ -1,0 +1,40 @@
+# Trinket M0 Balloon RC
+
+import array
+import digitalio
+import pulseio
+import board
+import adafruit_irremote
+import time
+import neopixel
+
+## Hardware Configuration
+# Define IR Remote
+remote = adafruit_irremote.GenericTransmit((3350, 1675), (460, 1300), (460, 400), 465)
+
+# Remote IR Out
+with pulseio.PWMOut(board.D2, frequency=38000, duty_cycle=2 ** 15) as pwm:
+  pulse = pulseio.PulseOut(pwm)
+  
+# Built in red LED
+led = DigitalInOut(board.D13)
+led.direction = Direction.OUTPUT
+
+# NeoPixel strip (of 16 LEDs) connected on D4
+NUMPIXELS = 16
+neopixels=neopixel.NeoPixel(board.D4,NUMPIXELS,brightness=0.2,auto_write=False)
+
+## Software Configuration
+# Global Variables
+
+VOLUMEUP = bytearray(b'*L\x02\x80\xe8j')
+VOLUMEDOWN = bytearray(b'*L\x02\x88\xe8b')
+
+#left = digitalio.DigitalInOut(board.LEFT_BUTTON)
+#right = digitalio.DigitalInOut(board.RIGHT_BUTTON)
+#left.switch_to_input(pull=digitalio.DigitalInOut.Pull.DOWN)
+#right.switch_to_input(pull=digitalio.DigitalInOut.Pull.DOWN)
+ 
+while True:
+  remote.transmit(pulse, VOLUMEUP)
+  # remote.transmit(pulse, VOLUMEDOWN)
