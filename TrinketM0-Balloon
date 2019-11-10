@@ -1,6 +1,7 @@
 # Trinket M0 Balloon RC
 
 import board
+import time
 from digitalio import DigitalInOut, Direction, Pull
 from analogio import AnalogOut, AnalogIn
 import neopixel
@@ -56,13 +57,13 @@ def forward_start():
         my_servo.angle = angle
         time.sleep(forward_start_sleep)
         print("Angle = %0.2f" % angle)
-        
+
 def forward():
     my_servo.angle = angle_left
     time.sleep(forward_sleep)
     my_servo.angle = angle_right
     time.sleep(forward_sleep)
-        
+
 def left():
     my_servo.angle = angle_left
     time.sleep(turn_sleep)
@@ -102,8 +103,25 @@ def wheel(pos):
 i = 0
 while True:
     # forward_start()
-    pulse = decoder.read_pulses(IR)
-    print(pulse)
+    my_servo.angle = start_angle
+    pulses = decoder.read_pulses(IR)
+    try: 
+        # Attempt to convert received pulses into numbers
+        received_code = decoder.decode_bits(pulses)
+    except adafruit_irremote.IRNECRepeatException:
+        # We received an unusual short code, probably a repeat signal
+        continue
+    except adafruit_irremote.IRDecodeException as e:
+        # Something went wrong or maybe just not an NEC type
+        continue
+    
+    print("NEC Infrared Code Received: ", received_code)
+    if received_code == [255, 2, 255, 0]:
+        print("Left Button Received")
+        left()
+    if received_code == [100, 100, 0, 0]:
+        print("Right Button Received")
+        right()
 
 # Read analog voltage on D0
 #    print("D0: %0.2f" % getVoltage(analog1in))
