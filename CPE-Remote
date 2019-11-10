@@ -7,6 +7,8 @@ import board
 import adafruit_irremote
 import time
 import neopixel
+import gamepad
+from adafruit_debouncer import Debouncer
 
 ## Hardware Configuration
 # Define IR Remote
@@ -17,6 +19,44 @@ button_left = digitalio.DigitalInOut(board.D4)
 button_right = digitalio.DigitalInOut(board.D5)
 button_left.switch_to_input(pull=digitalio.Pull.DOWN)
 button_right.switch_to_input(pull=digitalio.Pull.DOWN)
+
+# Define Joystick Inputs
+#buttonpins = [board.D6, board.D9, board.D3, board.D2]
+
+#for pin in buttonpins:
+ #   button = digitalio.DigitalInOut(pin)
+ #   button.direction = digitalio.Direction.INPUT
+ #   button.pull = digitalio.Pull.UP
+ #   buttons.append(button)
+
+debouncer_interval = 0.001
+
+joystick_1 = digitalio.DigitalInOut(board.D6)
+joystick_2 = digitalio.DigitalInOut(board.D9)
+joystick_3 = digitalio.DigitalInOut(board.D3)
+joystick_4 = digitalio.DigitalInOut(board.D2)
+joystick_1.direction = digitalio.Direction.INPUT
+joystick_1.pull = digitalio.Pull.UP
+joystick_1S = Debouncer(joystick_1, interval=debouncer_interval)
+#joystick_1.switch_to_input(pull=digitalio.Pull.UP)
+joystick_2.direction = digitalio.Direction.INPUT
+joystick_2.pull = digitalio.Pull.UP
+#joystick_2.switch_to_input(pull=digitalio.Pull.UP)
+#joystick_2S = Debouncer(joystick_2, interval=debouncer_interval)
+joystick_3.direction = digitalio.Direction.INPUT
+joystick_3.pull = digitalio.Pull.UP
+joystick_4.direction = digitalio.Direction.INPUT
+joystick_4.pull = digitalio.Pull.UP
+
+#B_UP = 1 << 0
+#B_DOWN = 1 << 1
+
+#pad = gamepad.GamePad(
+#    digitalio.DigitalInOut(board.D6),
+#    digitalio.DigitalInOut(board.D9),
+#    digitalio.DigitalInOut(board.D3),
+#    digitalio.DigitalInOut(board.D2))
+
 
 # Remote IR Out
 pwm = pulseio.PWMOut(board.D10, frequency = 38000, duty_cycle = 2 ** 15)
@@ -37,15 +77,21 @@ encoder = adafruit_irremote.GenericTransmit(header=[9500, 4500], one=[550, 550],
 ## Software Configuration
 # Global Variables
 
-VOLUMEUP = bytearray(b'*L\x02\x80\xe8j')
-VOLUMEDOWN = bytearray(b'*L\x02\x88\xe8b')
+joystick_sleep = 0.2
+remote_code = 0
+forward = [0, 0, 255, remote_code]
+right = [0, 255, 0, remote_code]
+left = [255, 0, 0, remote_code]
 
 #left = digitalio.DigitalInOut(board.LEFT_BUTTON)
 #right = digitalio.DigitalInOut(board.RIGHT_BUTTON)
 #left.switch_to_input(pull=digitalio.DigitalInOut.Pull.DOWN)
 #right.switch_to_input(pull=digitalio.DigitalInOut.Pull.DOWN)
 
+y = 0
 while True:
+    joystick_1S.update()
+#    joystick_2S.update()
     if button_left.value:
         print("Left Button Pressed")
         #remote.transmit(pulse, VOLUMEUP)
@@ -54,3 +100,36 @@ while True:
         print("Right Button Pressed")
        # remote.transmit(pulse, VOLUMEDOWN)
         encoder.transmit(pulseout, [100, 100, 0, 0])
+
+#    joystick = pad.get_pressed()
+#    if joystick & B_UP:
+#        y -= 1
+#        print(y)
+#    elif joystick & B_DOWN:
+#        y += 1
+#        print(y)
+#    time.sleep(0.1)
+#    while joystick:
+#        joystick = pad.get_pressed()
+#        time.sleep(0.1)
+    if not joystick_1.value:
+#    if joystick_1S.rose:
+        print("Joystick 1 pushed %", joystick_1.value)
+        time.sleep(joystick_sleep)
+        # Make sound (Down)
+    if not joystick_2.value:
+#    if joystick_2S.rose:
+        # Forward 
+        encoder.transmit(pulseout, forward)
+        print("Joystick 2 pushed %", joystick_2.value)
+        time.sleep(joystick_sleep)
+    if not joystick_3.value:
+        # Right
+        encoder.transmit(pulseout, right)
+        print("Joystick 3 pushed")
+        time.sleep(joystick_sleep)
+    if not joystick_4.value:
+        # Left
+        encoder.transmit(pulseout, left)
+        print("Joystick 4 pushed")
+        time.sleep(joystick_sleep)
