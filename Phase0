@@ -47,11 +47,11 @@ right_button = '8'
 def forward_start():
     for angle in range(0, angle_stop, angle_step_a):
         my_servo.angle = angle
-        time.sleep(forward_sleep_start)
+        time.sleep(forward_start_sleep)
         print("Angle = %0.2f" % angle)
     for angle in range(angle_stop, 0, angle_step_b):
         my_servo.angle = angle
-        time.sleep(forward_sleep_start)
+        time.sleep(forward_start_sleep)
         print("Angle = %0.2f" % angle)
         
 def forward():
