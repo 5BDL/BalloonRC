@@ -4,9 +4,9 @@ import board
 import time
 from digitalio import DigitalInOut, Direction, Pull
 from analogio import AnalogOut, AnalogIn
-import neopixel
 import pulseio
 import adafruit_irremote
+import adafruit_dotstar
 from adafruit_motor import servo
 
 ## Hardware Configuration
@@ -24,10 +24,9 @@ decoder = adafruit_irremote.GenericDecode()
 led = DigitalInOut(board.D13)
 led.direction = Direction.OUTPUT
 
-# NeoPixel strip (of 16 LEDs) connected on D4
-NUMPIXELS = 16
-neopixels=neopixel.NeoPixel(board.D4,NUMPIXELS,brightness=0.2,auto_write=False)
-
+# Dotstar OnBoard LED
+balloon_led = adafruit_dotstar.DotStar(board.APA102_SCK, board.APA102_MOSI, 1)
+balloon_led.brightness = 1.0
 
 ## Software Configuration
 # Global Variables
@@ -36,9 +35,9 @@ start_angle = 35
 angle_stop = 60
 angle_left = 70
 angle_right = 0
-forward_sleep = 0.2
+forward_sleep = 0.1
 forward_start_sleep = 0.05
-turn_sleep = 0.1
+turn_sleep = 0.05
 turn_step = 5
 angle_step_a = 6
 angle_step_b = -6
@@ -76,36 +75,24 @@ def right():
     my_servo.angle = angle_right
     time.sleep(turn_sleep)
 
-
-
-######################### HELPERS ##############################
-
-# Helper to convert analog input to voltage
-def getVoltage(pin):
-    return (pin.value * 3.3) / 65536
-
-# Helper to give us a nice color swirl
-def wheel(pos):
-    # Input a value 0 to 255 to get a color value.
-    # The colours are a transition r - g - b - back to r.
-    if (pos < 0):
-        return [0, 0, 0]
-    if (pos > 255):
-        return [0, 0, 0]
-    if (pos < 85):
-        return [int(pos * 3), int(255 - (pos*3)), 0]
-    elif (pos < 170):
-        pos -= 85
-        return [int(255 - pos*3), 0, int(pos*3)]
-    else:
-        pos -= 170
-        return [0, int(pos*3), int(255 - pos*3)]
+def identify():
+    if balloon_code == 0:
+        id_color = (255,0,0)
+    elif balloon_code == 100:
+        id_color = (0,255,0)
+    elif balloon_code == 200:
+        id_color = (0,0,255)
+    elif balloon_code == 300:
+        id_color = (255,255,255)
+    return id_color
 
 ######################### MAIN LOOP ##############################
 
-i = 0
 while True:
     # forward_start()
+    id_color = identify()
+    balloon_led[0] = id_color
+    
     my_servo.angle = start_angle
     pulses = decoder.read_pulses(IR)
     try:
@@ -129,6 +116,3 @@ while True:
     elif received_code == left_code:
         print("Left Button Received")
         left()
-
-# Read analog voltage on D0
-#    print("D0: %0.2f" % getVoltage(analog1in))
