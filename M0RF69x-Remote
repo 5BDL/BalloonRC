@@ -1,17 +1,24 @@
-# Feather M0 RFM69x Balloon RC
+# Feather M0 RFM69x Balloon RC Remote
 
 import array
 import digitalio
+import busio
 import pulseio
 import board
 import adafruit_irremote
 import time
-import neopixel
-from adafruit_debouncer import Debouncer
+import adafruit_rfm69
+
 
 ## Hardware Configuration
 # Define IR Remote
 remote = adafruit_irremote.GenericTransmit((3350, 1675), (460, 1300), (460, 400), 465)
+
+spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
+cs = digitalio.DigitalInOut(board.RFM69_CS)
+reset = digitalio.DigitalInOut(board.RFM69_RST)
+
+rfm69 = adafruit_rfm69.RFM69(spi, cs, reset, 915.0)
 
 # Define Buttons for test
 #button_left = digitalio.DigitalInOut(board.D11)
@@ -105,6 +112,7 @@ while True:
     if not joystick_1.value:
 #    if joystick_1S.rose:
         print("Joystick 1 pushed")
+        rfm69.send('Right')
         time.sleep(joystick_sleep)
         # Make sound (Down)
     if not joystick_2.value:
@@ -112,14 +120,17 @@ while True:
         # Forward
         #encoder.transmit(pulseout, forward)
         print("Joystick 2 pushed")
+        rfm69.send('Up')
         time.sleep(joystick_sleep)
     if not joystick_3.value:
         # Right
         #encoder.transmit(pulseout, right)
         print("Joystick 3 pushed")
+        rfm69.send('Left')
         time.sleep(joystick_sleep)
     if not joystick_4.value:
         # Left
         #encoder.transmit(pulseout, left)
         print("Joystick 4 pushed")
+        rfm69.send('Down')
         time.sleep(joystick_sleep)
