@@ -1,0 +1,88 @@
+# Feather M0 RFM69x Balloon RC Remote
+
+import array
+import digitalio
+import busio
+import pulseio
+import board
+#import adafruit_irremote
+import time
+import adafruit_rfm69
+
+
+## Hardware Configuration
+# Define IR Remote
+#remote = adafruit_irremote.GenericTransmit((3350, 1675), (460, 1300), (460, 400), 465)
+
+spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
+cs = digitalio.DigitalInOut(board.RFM69_CS)
+reset = digitalio.DigitalInOut(board.RFM69_RST)
+
+rfm69 = adafruit_rfm69.RFM69(spi, cs, reset, 433)
+
+debouncer_interval = 0.001
+
+# Joystick & Button Definition
+joystick_1 = digitalio.DigitalInOut(board.D9)
+joystick_2 = digitalio.DigitalInOut(board.D10)
+joystick_3 = digitalio.DigitalInOut(board.D11)
+joystick_4 = digitalio.DigitalInOut(board.D12)
+button = digitalio.DigitalInOut(board.D13)
+joystick_1.direction = digitalio.Direction.INPUT
+joystick_1.pull = digitalio.Pull.UP
+joystick_2.direction = digitalio.Direction.INPUT
+joystick_2.pull = digitalio.Pull.UP
+joystick_3.direction = digitalio.Direction.INPUT
+joystick_3.pull = digitalio.Pull.UP
+joystick_4.direction = digitalio.Direction.INPUT
+joystick_4.pull = digitalio.Pull.UP
+button.direction = digitalio.Direction.INPUT
+button.pull = digitalio.Pull.UP
+
+# Communication to Trinket
+burst_flag = digitalio.DigitalInOut(board.A4)
+burst_flag.direction = digitalio.Direction.OUTPUT
+timer_flag = digitalio.DigitalInOut(board.A5)
+timer_flag.direction = digitalio.Direction.INPUT
+burst_flag.value = False
+
+# Built in red LED
+#led = DigitalInOut(board.D13)
+#led.direction = Direction.OUTPUT
+
+# NOTE: Needed to add a Trinket M0 to drive the neopixels - b/c controller dos not have sufficient memory
+
+## Software Configuration
+# Global Variables
+
+joystick_sleep = 0.2
+remote_code = 0
+
+y = 0
+while True:
+    if not joystick_1.value:
+        print("Joystick 1 pushed")
+        rfm69.send('Right')
+        time.sleep(joystick_sleep)
+        # Make sound (Down)
+    if not joystick_2.value:
+        print("Joystick 2 pushed")
+        rfm69.send('Left')
+        time.sleep(joystick_sleep)
+    if not joystick_3.value:
+        print("Joystick 3 pushed")
+        rfm69.send('Up')
+        time.sleep(joystick_sleep)
+    if not joystick_4.value:
+        print("Joystick 4 pushed")
+        rfm69.send('Down')
+        time.sleep(joystick_sleep)
+    if not button.value:
+        print("Button Pressed")
+        if timer_flag.value == True:
+            rfm69.send('Button')
+            burst_flag.value = True
+            time.sleep(joystick_sleep)
+            burst_flag.value = False
+    print("timer_flag = ", timer_flag.value)
+    print("burst_flag = ", burst_flag.value)
