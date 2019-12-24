@@ -1,115 +1,143 @@
-# Feather M0 RFM69x Balloon RC Balloon
+# Write your code here :-)
+# Trinket M0 Balloon RC
 
 import array
-import digitalio
-import busio
+from digitalio import DigitalInOut, Direction, Pull
 import pulseio
 import board
-#import adafruit_irremote
+import adafruit_irremote
 import time
-import adafruit_rfm69
-from adafruit_motor import servo
-
+import neopixel
 
 ## Hardware Configuration
-# Define Servo Motor
-pwm = pulseio.PWMOut(board.D10, duty_cycle=2 ** 15, frequency=50)
-my_servo = servo.Servo(pwm)
-
-# Define IR Receiver
-#IR = pulseio.PulseIn(board.D3, maxlen = 200, idle_state = True)
-
-# Define IR Decoder
-#decoder = adafruit_irremote.GenericDecode()
 
 # Built in red LED
-led = digitalio.DigitalInOut(board.D13)
-led.direction = digitalio.Direction.OUTPUT
+led = DigitalInOut(board.D13)
+led.direction = Direction.OUTPUT
 
-# Define Radio
-spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
-cs = digitalio.DigitalInOut(board.RFM69_CS)
-reset = digitalio.DigitalInOut(board.RFM69_RST)
+# Communication to Main Board
+burst_flag = DigitalInOut(board.D2)
+burst_flag.direction = Direction.INPUT
+timer_flag = DigitalInOut(board.D4)
+timer_flag.direction = Direction.OUTPUT
+timer_flag.value = False
 
-rfm69 = adafruit_rfm69.RFM69(spi, cs, reset, 915.0)
+
+# NeoPixel strip (of 10 LEDs) connected on D3
+NUMPIXELS = 10
+neopixels=neopixel.NeoPixel(board.D3,NUMPIXELS,brightness=0.2,auto_write=False)
 
 ## Software Configuration
 # Global Variables
 
-start_angle = 35
-angle_stop = 60
-angle_left = 70
-angle_right = 0
-forward_sleep = 0.1
-forward_start_sleep = 0.05
-turn_sleep = 0.05
-turn_step = 5
-angle_step_a = 6
-angle_step_b = -6
-forward_button = '5'
-left_button = '7'
-right_button = '8'
-balloon_code = 0
-forward_code = 'Up'
-right_code = 'Right'
-left_code = 'Left'
+VOLUMEUP = bytearray(b'*L\x02\x80\xe8j')
+VOLUMEDOWN = bytearray(b'*L\x02\x88\xe8b')
+
+#left = digitalio.DigitalInOut(board.LEFT_BUTTON)
+#right = digitalio.DigitalInOut(board.RIGHT_BUTTON)
+#left.switch_to_input(pull=digitalio.DigitalInOut.Pull.DOWN)
+#right.switch_to_input(pull=digitalio.DigitalInOut.Pull.DOWN)
 
 
-# Function Definitions
-
-def forward_start():
-    for angle in range(0, angle_stop, angle_step_a):
-        my_servo.angle = angle
-        time.sleep(forward_start_sleep)
-        print("Angle = %0.2f" % angle)
-    for angle in range(angle_stop, 0, angle_step_b):
-        my_servo.angle = angle
-        time.sleep(forward_start_sleep)
-        print("Angle = %0.2f" % angle)
-
-def forward():
-    my_servo.angle = angle_left
-    time.sleep(forward_sleep)
-    my_servo.angle = angle_right
-    time.sleep(forward_sleep)
-
-def left():
-    my_servo.angle = angle_left
-    time.sleep(turn_sleep)
-    # print("Left Button Pressed, Angle = %0.2f" % angle)
-
-def right():
-    my_servo.angle = angle_right
-    time.sleep(turn_sleep)
-
-def identify():
-    if balloon_code == 0:
-        id_color = (255,0,0)
-    elif balloon_code == 100:
-        id_color = (0,255,0)
-    elif balloon_code == 200:
-        id_color = (0,0,255)
-    elif balloon_code == 300:
-        id_color = (255,255,255)
-    return id_color
+def wheel(pos):
+    # Input a value 0 to 255 to get a color value.
+    # The colours are a transition r - g - b - back to r.
+    if pos < 0 or pos > 255:
+        return (0, 0, 0)
+    if pos < 85:
+        return (255 - pos * 3, pos * 3, 0)
+    if pos < 170:
+        pos -= 85
+        return (0, 255 - pos * 3, pos * 3)
+    pos -= 170
+    return (pos * 3, 0, 255 - pos * 3)
 
 
-######################### MAIN LOOP ##############################
+def color_chase(color, wait):
+    for i in range(num_pixels):
+        pixels[i] = color
+        time.sleep(wait)
+        pixels.show()
+    time.sleep(0.5)
+
+
+def rainbow_cycle(wait):
+    for j in range(255):
+        for i in range(num_pixels):
+            rc_index = (i * 256 // num_pixels) + j
+            pixels[i] = wheel(rc_index & 255)
+        pixels.show()
+        time.sleep(wait)
+
+def burst_charge(x):
+    while x < NUMPIXELS:
+        neopixels[x] = GREEN
+        neopixels.show()
+        if x < 9:
+            time.sleep(SLEEP)
+        x += 1
+        print("x =", x)
+        if x == NUMPIXELS:
+            return True
+
+def burst_ready():
+   neopixels.fill(BLACK)
+   neopixels.show()
+   time.sleep(0.05)
+   neopixels.fill(GREEN)
+   neopixels.show()
+   time.sleep(BURST_SLEEP)
+
+def burst_discharge(x):
+    while x > -1:
+        neopixels[x] = RED
+        neopixels.show()
+        time.sleep(DISCHARGE_SLEEP)
+        x -= 1
+        print("discharge x =", x)
+        if x == 0:
+            return False
+
+
+RED = (255, 0, 0)
+YELLOW = (255, 150, 0)
+GREEN = (0, 255, 0)
+CYAN = (0, 255, 255)
+BLUE = (0, 0, 255)
+PURPLE = (180, 0, 255)
+BLACK = (0, 0, 0)
+# Change SLEEP to 6 for full
+SLEEP = 6
+BURST_SLEEP = 0.2
+DISCHARGE_SLEEP = 0.3
+
+x = 0
+bursty = 0
+
 while True:
-    id_color = identify()
-    led = id_color
-    my_servo.angle = start_angle
-    packet = rfm69.receive()
-    received_code = 'None'
-    if packet is not None:
-        received_code = str(packet, 'ascii') 
-        print("rfm code received:", received_code)
-    if received_code == forward_code:
-        print("Forward Button Received")
-        forward()
-    elif received_code == right_code:
-        print("Right Button Received")
-        right()
-    elif received_code == left_code:
-        print("Left Button Received")
-        left()
+    neopixels.fill(RED)
+    neopixels.show()
+    time.sleep(2)
+    timer_flag.value = burst_charge(x)
+    print("Burst Flag = ", burst_flag.value)
+    while burst_flag.value == False:
+        burst_ready()
+    if burst_flag.value == True:
+        burst_discharge(9)
+        timer_flag.value = False
+
+    # Increase or decrease to change the speed of the solid color change.
+
+
+
+
+
+'''    color_chase(RED, 0.1)  # Increase the number to slow down the color chase
+    color_chase(YELLOW, 0.1)
+    color_chase(GREEN, 0.1)
+    color_chase(CYAN, 0.1)
+    color_chase(BLUE, 0.1)
+    color_chase(PURPLE, 0.1)
+
+    rainbow_cycle(0)  # Increase the number to slow down the rainbow
+'''
