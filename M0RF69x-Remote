@@ -39,10 +39,10 @@ joystick_4.pull = digitalio.Pull.UP
 button.direction = digitalio.Direction.INPUT
 button.pull = digitalio.Pull.UP
 
-# Communication to Trinket 
-burst_flag = digitalio.DigitalInOut(board.D5)
+# Communication to Trinket
+burst_flag = digitalio.DigitalInOut(board.A4)
 burst_flag.direction = digitalio.Direction.OUTPUT
-timer_flag = digitalio.DigitalInOut(board.D4)
+timer_flag = digitalio.DigitalInOut(board.A5)
 timer_flag.direction = digitalio.Direction.INPUT
 burst_flag.value = False
 
@@ -83,5 +83,6 @@ while True:
             rfm69.send('Button')
             burst_flag.value = True
             time.sleep(joystick_sleep)
+            burst_flag.value = False
     print("timer_flag = ", timer_flag.value)
     print("burst_flag = ", burst_flag.value)
